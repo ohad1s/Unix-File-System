@@ -41,6 +41,45 @@ int allocate_file(char name[8]){
     return in;
 }
 
+int allocate_file_2(int size, const char* name) {
+    if (strlen(name)>11) {
+        perror("LONG_NAME");
+        return -1;
+    }
+    int inode = find_empty_inode();
+    if (inode == -1) {
+        perror("ERROR_TO_FIND_EMPTY_INODE");
+        return -1;
+    }
+    int curr_block = find_empty_block();
+    if (curr_block == -1) {
+        perror("ERROR_TO_FIND_EMPTY_BLOCK");
+        return -1;
+    }
+    inodes[inode].size = size;
+    inodes[inode].first_block = curr_block;
+    dbs[curr_block].next_block_num = -2;
+    strcpy(inodes[inode].name, name);
+    if (size>BLOCK_SIZE) {
+        int allocated_size = -(3*BLOCK_SIZE)/4;
+        int next_block;
+        while (allocated_size<size)
+        {
+            next_block = find_empty_block();
+            if (next_block == -1) {
+                perror("ERROR_TO_FIND_EMPTY_BLOCK");
+                return -1;
+            }
+            dbs[curr_block].next_block_num = next_block;
+            curr_block = next_block;
+            allocated_size+=BLOCK_SIZE;
+        }
+    }
+    dbs[curr_block].next_block_num = -2;
+
+    return inode;
+}
+
 void shorten_file(int bn)
 {
     int nn = dbs[bn].next_block_num;
@@ -82,9 +121,9 @@ int myopen(const char *pathname, int flags) {
             return i;
         }
     }
-//    check from here ########################################### !!!! ################################# check!!!! ##########
-//    int newfd = allocate_file_2(1, curr_p);
-//    int dirfd = myopendir(last_p);
+//    ########### check from here ########################################### !!!! ###
+//    int newfd = allocate_file_2(1, curr_p); ----- OK
+//    int dirfd = myopendir(last_p); ------- FROM HERE!!!!
 //    struct mydirent *currdir = myreaddir(dirfd);
 //    currdir->fds[currdir->size++] = newfd;
 //    return newfd;
