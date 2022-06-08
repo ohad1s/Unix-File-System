@@ -26,16 +26,6 @@ int find_empty_block() {
     }
     return -1;
 }
-//int allocate_file(char name[8]){
-//    int in = find_empty_inode();
-//    int block = find_empty_block();
-//    inodes[in].first_block = block;
-//    dbs[block].next_block_num = -2;
-//
-//    strcpy((inodes[in]).name, name);
-//    // return the file descriptor
-//    return in;
-//}
 
 int allocate_file(int size, const char *name) {
     int inode = find_empty_inode();
@@ -177,12 +167,13 @@ int create_dir(char *path, char *name) {
     }
 
     char *new_dir2 = (char *) newdir;
-    write_byte(newdirfd, i, new_dir2);
+    write_byte(newdirfd, 0, new_dir2);
+    opened[myfd].pos+= (sizeof(struct mydirent));
     strcpy(newdir->name, name);
     return newdirfd;
 }
 
-//############################################
+
 void create_fs(int s) {
     int size_without_superblock = s - sizeof(struct superblock);
     sb.num_inodes = (size_without_superblock / 10) / (sizeof(struct inode));
@@ -269,16 +260,15 @@ void write_byte(int filenum, int pos, char *data) {
     for (int i = 0; i < strlen(data); i++) {
         dbs[bn].data[offset + i] = data[i];
     }
-
     // dbs[bn].data[offset] = *data;
 }
 
-int myclose(int fd){
+int myclose(int fd) {
     opened[fd].fd = -1;
     opened[fd].pos = -1;
 }
 
-int myclosedir(int myfd){
+int myclosedir(int myfd) {
     return 0;
 }
 
@@ -295,4 +285,61 @@ void print_fs() {
     for (i = 0; i < sb.num_blocks; i++) {
         printf("\tblock_num: %d next block %d\n", i, dbs[i].next_block_num);
     }
+}
+
+size_t myread(int myfd, void *buf, size_t count) {
+    if (inodes[myfd].if_dir == 1) {
+        perror("DIR_NOT_FILE");
+        return -1;
+    }
+    char *buffer = malloc(count + 1);
+    for (size_t i = 0; i < count; i++) {
+
+
+        int rb = inodes[myfd].first_block;
+        int pos = opened[myfd].pos;
+        while (pos >= BLOCK_SIZE) {
+            pos -= BLOCK_SIZE;
+            rb = dbs[rb].next_block_num;
+            if (rb == -1 || rb == -2) {
+                return -1;
+            }
+        }
+        buffer[i] =   dbs[rb].data[pos];
+        opened[myfd].pos+=1;
+    }
+    buffer[count] = '\0';
+    strncpy(buf, buffer, count);
+    free(buffer);
+    return opened[myfd].pos;
+}
+
+
+int mylseek(int myfd, int offset, int whence) {
+//    if (openfiles[myfd].fd != myfd) {
+//        errno = 77;
+//        return -1;
+//    }
+    if (whence==SEEK_CUR) {
+        opened[myfd].pos += offset;
+    } else if (whence==SEEK_END) {
+        opened[myfd].pos = inodes[myfd].size+offset;
+    } else if (whence==SEEK_SET) {
+        opened[myfd].pos = offset;
+    }
+    if (opened[myfd].pos<0) {
+        opened[myfd].pos = 0;
+    }
+    return opened[myfd].pos;
+}
+
+size_t mywrite(int myfd, const void *buf, size_t count) {
+    if (inodes[myfd].dir==1) {
+        perror("DIR_NOT_FILE");
+        return -1;
+    }
+    char* buffer = (char*)buf;
+    write_byte(myfd, opened[myfd].pos, buffer);
+    opened[myfd].pos+= (count);
+    return opened[myfd].pos;
 }
