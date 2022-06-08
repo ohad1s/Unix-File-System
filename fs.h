@@ -47,3 +47,6 @@ void write_byte(int filenum,int pos, char* data);
 int get_block_num(int file, int offset);
 void shorten_file(int bn);
 void print_fs();
+int myopendir(const char *name);
+struct mydirent *myreaddir(int dirp);
+int create_dir(char *path, char *name);

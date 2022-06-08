@@ -90,9 +90,9 @@ int myopen(const char *pathname, int flags) {
         }
         token = strtok(NULL, s);
     }
-    for (size_t i = 0; i < sb.inodes; i++) {
+    for (size_t i = 0; i < sb.num_inodes; i++) {
         if (!strcmp(inodes[i].name, curr_p)) {
-            if (inodes[i].dir != 2) {
+            if (inodes[i].if_dir != 2) {
                 perror("DIR_NOT_FILE");
                 return -1;
             }
@@ -101,11 +101,11 @@ int myopen(const char *pathname, int flags) {
             return i;
         }
     }
-    int newfd = allocate_file_2(1, curr_p);
+    int newfd = allocate_file(1, curr_p);
     int dirfd = myopendir(last_p);
     struct mydirent *currdir = myreaddir(dirfd);
     currdir->fds[currdir->size++] = newfd;
-    opened[newfd].fd = i;
+    opened[newfd].fd = newfd;
     opened[newfd].pos = 0;
     return newfd;
 }
@@ -132,9 +132,9 @@ int myopendir(const char *name) {
         }
         token = strtok(NULL, s);
     }
-    for (size_t i = 0; i < sb.inodes; i++) {
+    for (size_t i = 0; i < sb.num_inodes; i++) {
         if (!strcmp(inodes[i].name, curr_p)) {
-            if (inodes[i].dir != 1) {
+            if (inodes[i].if_dir != 1) {
                 perror("DIR_NOT_FILE");
                 return -1;
             }
@@ -151,8 +151,8 @@ int create_dir(char *path, char *name) {
         perror("ERROR");
         return -1;
     }
-    if (inodes[fd].dir != 1) {
-        perror("DIR_NOT_FILE")
+    if (inodes[fd].if_dir != 1) {
+        perror("DIR_NOT_FILE");
         return -1;
     }
     int dirblock = inodes[fd].first_block;
@@ -168,7 +168,7 @@ int create_dir(char *path, char *name) {
 
     char *new_dir2 = (char *) newdir;
     write_byte(newdirfd, 0, new_dir2);
-    opened[myfd].pos+= (sizeof(struct mydirent));
+    opened[fd].pos+= (sizeof(struct mydirent));
     strcpy(newdir->name, name);
     return newdirfd;
 }
@@ -298,8 +298,8 @@ size_t myread(int myfd, void *buf, size_t count) {
 
         int rb = inodes[myfd].first_block;
         int pos = opened[myfd].pos;
-        while (pos >= BLOCK_SIZE) {
-            pos -= BLOCK_SIZE;
+        while (pos >= BLOCKSIZE) {
+            pos -= BLOCKSIZE;
             rb = dbs[rb].next_block_num;
             if (rb == -1 || rb == -2) {
                 return -1;
@@ -334,7 +334,7 @@ int mylseek(int myfd, int offset, int whence) {
 }
 
 size_t mywrite(int myfd, const void *buf, size_t count) {
-    if (inodes[myfd].dir==1) {
+    if (inodes[myfd].if_dir==1) {
         perror("DIR_NOT_FILE");
         return -1;
     }
