@@ -2,11 +2,6 @@
 // Credit: https://www.tutorialspoint.com/c_standard_library/c_function_strtok.htm
 #include "fs.h"
 
-struct superblock sb;
-struct inode *inodes;
-struct disk_block *dbs;
-struct open_file opened[12];
-
 int find_empty_inode() {
     int i;
     for (i = 0; i < sb.num_inodes; i++) {
@@ -278,8 +273,6 @@ size_t myread(int myfd, void *buf, size_t count) {
     }
     char *buffer = malloc(count + 1);
     for (size_t i = 0; i < count; i++) {
-
-
         int rb = inodes[myfd].first_block;
         int pos = opened[myfd].pos;
         while (pos >= BLOCKSIZE) {

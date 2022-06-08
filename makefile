@@ -1,13 +1,19 @@
 .PHONY: all clean
-all: test
+all: test_mylibc #test_fs
 
-test: test.o fs.o
-	gcc -g -o test test.o fs.o
-test.o: test.c fs.h
-	gcc -g -c test.c
+test_fs: test_fs.o fs.o 
+	gcc -g -o test_fs test_fs.o fs.o
+test_fs.o: test_fs.c fs.h
+	gcc -g -c test_fs.c
 fs.o: fs.c fs.h
 	gcc -g -c fs.c
+test_mylibc: test_mylibc.o mylibc.o
+	gcc -g -o test_mylibc test_mylibc.o mylibc.o
+test_mylibc.o: test_mylibc.c mylibc.h
+	gcc -g -c test_mylibc.c
+mylibc.o: mylibc.c mylibc.h
+	gcc -g -c mylibc.c
 
 clean:
-	rm -f *.o test fs_data
+	rm -f *.o test_fs fs_data test_mylibc
     
