@@ -36,12 +36,12 @@ struct mydirent {
 };
 
 void mymfks(int size);
-
-void create_fs();
+int myclosedir(int myfd);
+void create_fs(int s);
 int mymount(const char *source, const char *target, const char *filesystemtype, unsigned long mountflags, const void *data);
 void sync_fs(const char* target);
-
-int allocate_file(char name[8]);
+int myclose(int fd);
+int allocate_file(int size, const char *name);
 void set_filesize(int filenum, int size);
 void write_byte(int filenum,int pos, char* data);
 int get_block_num(int file, int offset);
