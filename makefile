@@ -9,5 +9,5 @@ fs.o: fs.c fs.h
 	gcc -g -c fs.c
 
 clean:
-	rm -f *.o test fs_data testfile.txt
+	rm -f *.o test fs_data
     

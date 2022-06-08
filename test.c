@@ -1,142 +1,90 @@
 #include "fs.h"
 
-void red() {
-    printf("\033[1;31m");
+void Failed_test() {
+    printf("Test Failed! :(\n");
 }
 
-void green() {
-    printf("\033[1;32m");
-}
-
-void white() {
-    printf("\033[1;0m");
+void Good_Test() {
+    printf("Test Passed! :)\n");
 }
 
 int main(int argc, char const *argv[]) {
 
-    printf("creating root..\n");
     mymfks(10000);
-//    mymount(NULL, "file", NULL, 0, NULL);
-//    // ############### test1: open the same directory ###############
-    int t1 = myopendir("root/test1");
-    int t2 = myopendir("root/test1");
-    int t = (t1 == t2);
-    if(t == 1)
-    {
-        green();
-        printf("myopendir test PASSED\n");
-    }else{
-        red();
-        printf("myopendir test FAILED\n");
+    int t1 = myopendir("root/ohad");
+    int t2 = myopendir("root/dvir");
+    if (t1 == t2) {
+        Failed_test();
+    } else {
+        Good_Test();
     }
-    myopendir("root/test2");
 
-    // ############### test2: open the same file with myopen ###############
+    int fd1 = myopen("root/ohad/o1", 0);
+    int fd2 = myopen("root/ohad/o1", 0);
 
-
-    int fd = myopen("root/test1/file1", 0);
-    int testfd = myopen("root/test1/file1", 0);
-    int fd2 = myopen("root/test2/file2",0);
-    int fd3 = myopen("root/test1/file2",0);
-    int i = (fd == testfd);
-    if(i == 1)
-    {
-        green();
-        printf("myopen test PASSED\n");
-    }else{
-        red();
-        printf("myopen test FAILED\n");
+    if (fd1 == fd2) {
+        Good_Test();
+    } else {
+        Failed_test();
     }
-    white();
-    // ############### test3: open the same file in different directories ###############
-
-    i = (fd2 == fd3);
-    if(i == 1)
-    {
-        green();
-        printf("different directory open file PASSED\n");
-    }else{
-        red();
-        printf("different directory open file FAILED\n");
+    int fd3 = myopen("root/dvir/d1", 0);
+    if (fd1 == fd3) {
+        Failed_test();
+    } else {
+        Good_Test();
     }
-    white();
 
+    fd1 = myclose(fd1);
 
-    // ############### test4: closing file changing fd ###############
-
-    testfd = myclose(testfd);
-
-    i = (fd != testfd);
-    if(i == 1)
-    {
-        green();
-        printf("myclose test PASSED\n");
-    }else{
-        red();
-        printf("myclose test FAILED\n");
+    if (fd1 == fd2) {
+        Failed_test();
+    } else {
+        Good_Test();
     }
-    white();
-    // ############### test5: write, read and seek operation on files ###############
 
-    char* test = "this is a test\n";
+    char *test1 = " ohad_test";
 
-    int ptr =  mywrite(fd2, test, 25);
-    char buf[25];
-    char buf2[25];
-    mylseek(fd2, -25, SEEK_CUR);
-    myread(fd2, buf, 25);
-
-
-    if(strcmp(buf, test) ==0)
-    {
-        green();
-        printf("read test PASSED\n");
-    }else
-    {
-        red();
-        printf("read test FAILED\n");
+    int ptr2 = mywrite(fd2, test1, 12);
+    char ohad_buf[12];
+    mylseek(fd2, -13, SEEK_CUR);
+    myread(fd2, ohad_buf, 12);
+    if (strcmp(ohad_buf, "ohad_test") == 0) {
+        Good_Test();
+    } else {
+        Failed_test();
     }
-    white();
-    mylseek(fd2,-15,SEEK_CUR);
-    myread(fd2, buf2, 15);
 
-    if(strcmp(buf2, "test\n") ==0)
-    {
-        green();
-        printf("seek test PASSED\n\n");
-    }else
-    {
-        red();
-        printf("seek test FAILED\n\n");
+
+    char *test2 = "dvir_test";
+
+    int ptr = mywrite(fd3, test2, 12);
+    char dvir_buf[12];
+    mylseek(fd3, 0, SEEK_SET);
+    myread(fd2, dvir_buf, 12);
+
+    if (strcmp(ohad_buf, dvir_buf) == 0) {
+        Failed_test();
+    } else {
+        Good_Test();
     }
-    white();
-    // ############### test6: testing write big file ###############
 
-    char* test2 = "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$test";
-    int newfd = myopen("root/test1/bigfile", 0);
-    char *bigbuf = malloc(8);
-    mywrite(newfd,test2,strlen(test2));
+    char *ohad_buf2 = malloc(4);
+    mylseek(fd2, -9, SEEK_END);
+    myread(fd2, ohad_buf2, 4);
 
-    mylseek(newfd,-8,SEEK_CUR);
-    myread(newfd,bigbuf,8);
-    printf("bigbuf is: %s",bigbuf);
-    if(strcmp(bigbuf, "$$$$test") == 0)
-    {
-        green();
-        printf("seek test big file PASSED\n\n");
-    }else
-    {
-        red();
-        printf("seek test big file FAILED\n\n");
+    if (strcmp(ohad_buf, ohad_buf2) == 0) {
+        Failed_test();
+    } else {
+        Good_Test();
     }
-    white();
 
-    printf("our fs looks like this:\n\n");
-//    printdir("root");
-//    printdir("test1");
-//    printdir("test2");
+    if (strcmp("ohad", ohad_buf2) == 0) {
+        Good_Test();
+    } else {
+        Failed_test();
+    }
 
-    mymount(NULL, "testfile.txt", NULL,0,NULL);
+    mymount(NULL, "fs_data", NULL, 0, NULL);
 
     return 0;
 }

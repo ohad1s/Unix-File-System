@@ -42,23 +42,6 @@ int allocate_file(int size, const char *name) {
     inodes[inode].first_block = curr_block;
     dbs[curr_block].next_block_num = -2;
     strcpy(inodes[inode].name, name);
-//    if (size>BLOCKSIZE) {
-//        int allocated_size = -(3*BLOCKSIZE)/4;
-//        int next_block;
-//        while (allocated_size<size)
-//        {
-//            next_block = find_empty_block();
-//            if (next_block == -1) {
-//                perror("ERROR_TO_FIND_EMPTY_BLOCK");
-//                return -1;
-//            }
-//            dbs[curr_block].next_block_num = next_block;
-//            curr_block = next_block;
-//            allocated_size+=BLOCKSIZE;
-//        }
-//    }
-//    dbs[curr_block].next_block_num = -2;
-
     return inode;
 }
 
@@ -83,10 +66,8 @@ int myopen(const char *pathname, int flags) {
     char curr_p[PATH_SIZE] = "";
     char last_p[PATH_SIZE] = "";
     while (token != NULL) {
-        if (token != NULL) {
-            strcpy(last_p, curr_p);
-            strcpy(curr_p, token);
-        }
+        strcpy(last_p, curr_p);
+        strcpy(curr_p, token);
         token = strtok(NULL, s);
     }
     for (size_t i = 0; i < sb.num_inodes; i++) {
@@ -102,8 +83,8 @@ int myopen(const char *pathname, int flags) {
     }
     int newfd = allocate_file(1, curr_p);
     int dirfd = myopendir(last_p);
-    struct mydirent *currdir = myreaddir(dirfd);
-    currdir->fds[currdir->size++] = newfd;
+    struct mydirent *curr = myreaddir(dirfd);
+    curr->fds[curr->size++] = newfd;
     opened[newfd].fd = newfd;
     opened[newfd].pos = 0;
     return newfd;
@@ -138,8 +119,7 @@ int myopendir(const char *name) {
             return i;
         }
     }
-//    return create_dir(last_p, curr_p);
-int my_fd= myopendir(last_p);
+    int my_fd = myopendir(last_p);
     if (my_fd == -1) {
         perror("ERROR");
         return -1;
@@ -177,7 +157,7 @@ void create_fs(int s) {
     for (i = 0; i < sb.num_inodes; i++) {
         inodes[i].size = -1;
         inodes[i].first_block = -1;
-        strcpy(inodes[i].name, "no_name");
+        strcpy(inodes[i].name, "emptyfi");
         inodes[i].if_dir = 2; //2 for file, 1 for directory
     }
     dbs = malloc(sizeof(struct disk_block) * sb.num_blocks);
@@ -185,22 +165,22 @@ void create_fs(int s) {
         dbs[i].next_block_num = -1;
         strcpy(dbs[i].data, "_");
     }
-    int zerofd = allocate_file(sizeof(struct mydirent),  "root");
-    inodes[zerofd].if_dir = 1;
-    struct mydirent* rootdir = malloc(sizeof(struct mydirent));
-    for (size_t i = 0; i < 12; i++)
-    {
+    int myfd = allocate_file(sizeof(struct mydirent), "root");
+    inodes[myfd].if_dir = 1;
+    struct mydirent *rootdir = malloc(sizeof(struct mydirent));
+    for (size_t i = 0; i < 12; i++) {
         rootdir->fds[i] = -1;
     }
     strcpy(rootdir->name, "root");
     rootdir->size = 0;
-    char* rootdiraschar = (char*)rootdir;
-    write_byte(zerofd, 0, rootdiraschar);
-    opened[zerofd].pos += (sizeof(rootdiraschar));
+    char *rootdiraschar = (char *) rootdir;
+    write_byte(myfd, 0, rootdiraschar);
+    opened[myfd].pos += (sizeof(rootdiraschar));
     free(rootdir);
 }
 
-int mymount(const char *source, const char *target, const char *filesystemtype, unsigned long mountflags, const void *data) {
+int mymount(const char *source, const char *target, const char *filesystemtype, unsigned long mountflags,
+            const void *data) {
     if (source == NULL && target == NULL) {
         perror("Src and Trg are NULL");
         return -1;
@@ -265,7 +245,6 @@ void write_byte(int filenum, int pos, char *data) {
     for (int i = 0; i < strlen(data); i++) {
         dbs[bn].data[offset + i] = data[i];
     }
-    // dbs[bn].data[offset] = *data;
 }
 
 int myclose(int fd) {
