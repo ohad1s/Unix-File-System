@@ -55,7 +55,6 @@ int myopen(const char *pathname, int flags);
 size_t mywrite(int myfd, const void *buf, size_t count);
 int mylseek(int myfd, int offset, int whence);
 size_t myread(int myfd, void *buf, size_t count);
-
 struct superblock sb;
 struct inode *inodes;
 struct disk_block *dbs;

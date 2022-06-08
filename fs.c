@@ -286,6 +286,7 @@ size_t myread(int myfd, void *buf, size_t count) {
         opened[myfd].pos += 1;
     }
     buffer[count] = '\0';
+    bzero(buf,count);
     strncpy(buf, buffer, count);
     free(buffer);
     return opened[myfd].pos;
