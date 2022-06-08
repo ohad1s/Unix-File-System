@@ -50,3 +50,7 @@ void print_fs();
 int myopendir(const char *name);
 struct mydirent *myreaddir(int dirp);
 int create_dir(char *path, char *name);
+int myopen(const char *pathname, int flags);
+size_t mywrite(int myfd, const void *buf, size_t count);
+int mylseek(int myfd, int offset, int whence);
+size_t myread(int myfd, void *buf, size_t count);

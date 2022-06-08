@@ -42,8 +42,8 @@ int allocate_file(int size, const char *name) {
     inodes[inode].first_block = curr_block;
     dbs[curr_block].next_block_num = -2;
     strcpy(inodes[inode].name, name);
-//    if (size>BLOCK_SIZE) {
-//        int allocated_size = -(3*BLOCK_SIZE)/4;
+//    if (size>BLOCKSIZE) {
+//        int allocated_size = -(3*BLOCKSIZE)/4;
 //        int next_block;
 //        while (allocated_size<size)
 //        {
@@ -54,7 +54,7 @@ int allocate_file(int size, const char *name) {
 //            }
 //            dbs[curr_block].next_block_num = next_block;
 //            curr_block = next_block;
-//            allocated_size+=BLOCK_SIZE;
+//            allocated_size+=BLOCKSIZE;
 //        }
 //    }
 //    dbs[curr_block].next_block_num = -2;
@@ -70,7 +70,6 @@ void shorten_file(int bn) {
     dbs[bn].next_block_num = -1;
 }
 
-//######### me: ##############################
 void mymfks(int size) {
     create_fs(size);
 }
@@ -126,10 +125,8 @@ int myopendir(const char *name) {
     char curr_p[PATH_SIZE] = "";
     char last_p[PATH_SIZE] = "";
     while (token != NULL) {
-        if (token != NULL) {
-            strcpy(last_p, curr_p);
-            strcpy(curr_p, token);
-        }
+        strcpy(last_p, curr_p);
+        strcpy(curr_p, token);
         token = strtok(NULL, s);
     }
     for (size_t i = 0; i < sb.num_inodes; i++) {
@@ -168,7 +165,7 @@ int create_dir(char *path, char *name) {
 
     char *new_dir2 = (char *) newdir;
     write_byte(newdirfd, 0, new_dir2);
-    opened[fd].pos+= (sizeof(struct mydirent));
+    opened[fd].pos += (sizeof(struct mydirent));
     strcpy(newdir->name, name);
     return newdirfd;
 }
@@ -305,8 +302,8 @@ size_t myread(int myfd, void *buf, size_t count) {
                 return -1;
             }
         }
-        buffer[i] =   dbs[rb].data[pos];
-        opened[myfd].pos+=1;
+        buffer[i] = dbs[rb].data[pos];
+        opened[myfd].pos += 1;
     }
     buffer[count] = '\0';
     strncpy(buf, buffer, count);
@@ -316,30 +313,26 @@ size_t myread(int myfd, void *buf, size_t count) {
 
 
 int mylseek(int myfd, int offset, int whence) {
-//    if (openfiles[myfd].fd != myfd) {
-//        errno = 77;
-//        return -1;
-//    }
-    if (whence==SEEK_CUR) {
+    if (whence == SEEK_CUR) {
         opened[myfd].pos += offset;
-    } else if (whence==SEEK_END) {
-        opened[myfd].pos = inodes[myfd].size+offset;
-    } else if (whence==SEEK_SET) {
+    } else if (whence == SEEK_END) {
+        opened[myfd].pos = inodes[myfd].size + offset;
+    } else if (whence == SEEK_SET) {
         opened[myfd].pos = offset;
     }
-    if (opened[myfd].pos<0) {
+    if (opened[myfd].pos < 0) {
         opened[myfd].pos = 0;
     }
     return opened[myfd].pos;
 }
 
 size_t mywrite(int myfd, const void *buf, size_t count) {
-    if (inodes[myfd].if_dir==1) {
+    if (inodes[myfd].if_dir == 1) {
         perror("DIR_NOT_FILE");
         return -1;
     }
-    char* buffer = (char*)buf;
+    char *buffer = (char *) buf;
     write_byte(myfd, opened[myfd].pos, buffer);
-    opened[myfd].pos+= (count);
+    opened[myfd].pos += (count);
     return opened[myfd].pos;
 }
