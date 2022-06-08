@@ -138,23 +138,19 @@ int myopendir(const char *name) {
             return i;
         }
     }
-    return create_dir(last_p, curr_p);
-}
-
-
-int create_dir(char *path, char *name) {
-    int fd = myopendir(path);
-    if (fd == -1) {
+//    return create_dir(last_p, curr_p);
+int my_fd= myopendir(last_p);
+    if (my_fd == -1) {
         perror("ERROR");
         return -1;
     }
-    if (inodes[fd].if_dir != 1) {
+    if (inodes[my_fd].if_dir != 1) {
         perror("DIR_NOT_FILE");
         return -1;
     }
-    int dirblock = inodes[fd].first_block;
-    struct mydirent *currdir = (struct mydirent *) dbs[dirblock].data;
-    int newdirfd = allocate_file(sizeof(struct mydirent), name);
+    int d_b = inodes[my_fd].first_block;
+    struct mydirent *currdir = (struct mydirent *) dbs[d_b].data;
+    int newdirfd = allocate_file(sizeof(struct mydirent), curr_p);
     currdir->fds[currdir->size++] = newdirfd;
     inodes[newdirfd].if_dir = 1;
     struct mydirent *newdir = malloc(sizeof(struct mydirent));
@@ -165,7 +161,7 @@ int create_dir(char *path, char *name) {
 
     char *new_dir2 = (char *) newdir;
     write_byte(newdirfd, 0, new_dir2);
-    opened[fd].pos += (sizeof(struct mydirent));
+    opened[my_fd].pos += (sizeof(struct mydirent));
     strcpy(newdir->name, name);
     return newdirfd;
 }
@@ -189,10 +185,22 @@ void create_fs(int s) {
         dbs[i].next_block_num = -1;
         strcpy(dbs[i].data, "_");
     }
+    int zerofd = allocate_file(sizeof(struct mydirent),  "root");
+    inodes[zerofd].if_dir = 1;
+    struct mydirent* rootdir = malloc(sizeof(struct mydirent));
+    for (size_t i = 0; i < 12; i++)
+    {
+        rootdir->fds[i] = -1;
+    }
+    strcpy(rootdir->name, "root");
+    rootdir->size = 0;
+    char* rootdiraschar = (char*)rootdir;
+    write_byte(zerofd, 0, rootdiraschar);
+    opened[zerofd].pos += (sizeof(rootdiraschar));
+    free(rootdir);
 }
 
-int mymount(const char *source, const char *target, const char *filesystemtype, unsigned long mountflags,
-            const void *data) {
+int mymount(const char *source, const char *target, const char *filesystemtype, unsigned long mountflags, const void *data) {
     if (source == NULL && target == NULL) {
         perror("Src and Trg are NULL");
         return -1;

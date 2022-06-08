@@ -12,14 +12,13 @@ void white() {
     printf("\033[1;0m");
 }
 
-int main(int argc, char const *argv[])
-{
+int main(int argc, char const *argv[]) {
 
     printf("creating root..\n");
     mymfks(10000);
-    // ############### test1: open the same directory ###############
+//    mymount(NULL, "file", NULL, 0, NULL);
+//    // ############### test1: open the same directory ###############
     int t1 = myopendir("root/test1");
-    printf("Ciii..\n");
     int t2 = myopendir("root/test1");
     int t = (t1 == t2);
     if(t == 1)
@@ -39,10 +38,6 @@ int main(int argc, char const *argv[])
     int testfd = myopen("root/test1/file1", 0);
     int fd2 = myopen("root/test2/file2",0);
     int fd3 = myopen("root/test1/file2",0);
-//    int fd = myopen("file1", 0);
-//    int testfd = myopen("file1", 0);
-//    int fd2 = myopen("file2",0);
-//    int fd3 = myopen("file2",0);
     int i = (fd == testfd);
     if(i == 1)
     {
