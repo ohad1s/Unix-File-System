@@ -3,7 +3,7 @@
 #include "mylibc.h"
 #include "fs.h"
 
-myfile *myfopen(const char *restrict pathname, const char *restrict mode)
+myFILE *myfopen(const char *pathname, const char *mode)
 {
     int fd = myopen(pathname, -1);
     if (fd == -1)
@@ -11,95 +11,102 @@ myfile *myfopen(const char *restrict pathname, const char *restrict mode)
         perror("file not found\n");
         return NULL;
     }
-    p_myfile f = (p_myfile)(malloc(sizeof(myfile)));
+    p_myFILE f = (p_myFILE)(malloc(sizeof(myFILE)));
     strcpy(f->mode, mode);
     f->fd = fd;
     f->p = 0;
     if (strcmp(mode, "a") == 0)
     {
-        f->p = inodes[fd].size;
+        mylseek(f->fd, 0, SEEK_END);
     }
-    f->size = 9;
-    f->data = (char *)(malloc(sizeof(f->size)));
-    if (strcmp(mode, "w") == 0)
-    {
-        bzero(f->data, f->size);
-    }
-    if (strcmp(mode, "r") == 0)
-    {
-        myread(fd, f->data, f->size);
-    }
-    myclose(fd);
+    f->name = name_disk;
     return f;
 }
-int myfclose(myfile *stream)
+int myfclose(myFILE *stream)
 {
-    if (strcmp(stream->mode, "r"))
+    if (myclose(stream->fd) == 0)
     {
-        free(stream->data);
         free(stream);
         return 0; // 0 succsess -1 faild
     }
-    write_byte(stream->fd, 0, stream->data);
-    stream->p += stream->size;
-    free(stream->data);
     free(stream);
-    return 0; // 0 succsess -1 faild
+    return -1; // 0 succsess -1 faild
 }
-size_t myfread(void *restrict ptr, size_t size, size_t nmemb, myfile *restrict stream)
+size_t myfread(void *ptr, size_t size, size_t nmemb, myFILE *stream)
 {
-    int count = nmemb * size;
-    char *buf = (char *)(malloc(sizeof(count + 1)));
-    bzero(buf, count + 1);
-    int i = 0;
-    while (stream->p + i <= stream->size)
-    {
-        buf[i] = stream->data[stream->p + i];
-        i++;
-    }
-    stream->p = stream->p + i;
-    strncpy(ptr, buf, count);
-    free(buf);
-    return stream->p;
+    return myread(stream->fd, ptr, nmemb * size);
 }
 
-size_t myfwrite(const void *restrict ptr, size_t size, size_t nmemb, myfile *restrict stream)
+size_t myfwrite(const void *ptr, size_t size, size_t nmemb, myFILE *stream)
 {
-    int count = size * nmemb;
-    char *buf = (char *)ptr;
-    int i = 0;
-    for (i = 0; i < count; i++)
-    {
-        stream->data[stream->p + i] = buf[i];
-    }
-    stream->p += i;
-    return stream->p;
+    int newPos = mywrite(stream->fd, ptr, size * nmemb);
+    sync_fs(stream->name);
+    return newPos;
 }
-int myfseek(myfile *stream, long offset, int whence)
+int myfseek(myFILE *stream, long offset, int whence)
 {
-    if (whence == SEEK_CUR)
-    {
-        stream->p += offset;
-    }
-    else if (whence == SEEK_END)
-    {
-        stream->p = stream->size + offset;
-    }
-    else if (whence == SEEK_SET)
-    {
-        stream->p = offset;
-    }
-    if (stream->p <= 0)
-    {
-        stream->p = 0;
-    }
-    return stream->p;
+    mylseek(stream->fd, offset, whence);
+    return 0;
 }
-int myfscanf(void *restrict ptr, size_t size, size_t nmemb, myfile *restrict stream)
+int myfscanf2(void *ptr, size_t size, size_t nmemb, myFILE *stream)
 {
     myfread(ptr, size, nmemb, stream);
 }
-int myfprintf(int myfd, const void *buf, size_t count)
+int myfprintf2(int myfd, const void *buf, size_t count)
 {
     mywrite(myfd, buf, count);
+}
+
+int myfscanf(myFILE *stream, const char *format, ...)
+{
+    va_list arguments;                     
+    double sum = 0;
+    /* Initializing arguments to store all values after num */
+    va_start ( arguments, format );
+    int len = strlen(format);
+    int newPos = 0;
+    for (size_t i = 0; i < len-1; i++)
+    {
+        if (format[i] == '%')
+        {
+            if (format[i+1] == 'd')
+            {
+                myfread(va_arg(arguments,void *), 1,sizeof(int),stream);
+                newPos++;
+            }
+            if (format[i+1] == 'c')
+            {
+                myfread(va_arg(arguments,void *), 1,sizeof(char),stream);
+                newPos++;
+            }
+        }
+        return newPos;
+    }
+               
+}
+int myfprintf(myFILE *stream, const char *format, ...)
+{
+    va_list arguments;                     
+    /* Initializing arguments to store all values after num */
+    va_start ( arguments, format );
+    int len = strlen(format);
+    int newPos = 0;
+    for (size_t i = 0; i < len-1; i++)
+    {
+        if (format[i] == '%')
+        {
+            if (format[i+1] == 'd')
+            {
+
+                myfwrite(va_arg(arguments,void *), 1,sizeof(int),stream);
+                newPos++;
+            }
+            if (format[i+1] == 'c')
+            {
+                myfwrite(va_arg(arguments,void *), 1,sizeof(char),stream);
+                newPos++;
+            }
+        }
+        return newPos;
+    }
 }

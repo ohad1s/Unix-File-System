@@ -59,3 +59,4 @@ struct superblock sb;
 struct inode *inodes;
 struct disk_block *dbs;
 struct open_file opened[12];
+char* name_disk;

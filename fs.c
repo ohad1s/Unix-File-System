@@ -181,6 +181,8 @@ int mymount(const char *source, const char *target, const char *filesystemtype, 
         return -1;
     }
     if (source != NULL) {
+        name_disk = malloc(sizeof(strlen(source)));
+        strcpy(name_disk,source);  
         FILE *file;
         file = fopen(source, "r");
         fread(&sb, sizeof(struct superblock), 1, file);
@@ -191,6 +193,8 @@ int mymount(const char *source, const char *target, const char *filesystemtype, 
         fclose(file);
     }
     if (target != NULL) {
+        name_disk = malloc(sizeof(strlen(target)));
+        strcpy(name_disk,target);  
         sync_fs(target);
     }
 }
@@ -245,6 +249,7 @@ void write_byte(int filenum, int pos, char *data) {
 int myclose(int fd) {
     opened[fd].fd = -1;
     opened[fd].pos = -1;
+    return 0;
 }
 
 int myclosedir(int myfd) {
